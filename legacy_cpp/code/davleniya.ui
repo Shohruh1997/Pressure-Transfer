@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Davleniya</class>
+ <widget class="QMainWindow" name="Davleniya">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>859</width>
+    <height>150</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Davleniya</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/icon.png</normaloff>:/icon.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow
+{
+background-color:#bcffa4;
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">QWidget
+{
+background-color:#b28bff;
+}</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0" colspan="7">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <family>News701 BT</family>
+          <pointsize>11</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel
+{
+background-color:#b9c6ff;
+color:black;
+border:2px solid black;
+}
+</string>
+        </property>
+        <property name="text">
+         <string>Выберите единицу измерения давления</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="comboBox">
+        <property name="font">
+         <font>
+          <family>Segoe UI Black</family>
+          <pointsize>11</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QComboBox
+{
+background-color:yellow;
+color:black;
+}</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>Па</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>кПа</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>МПа</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>бар</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>кгс/см2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Атм</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>мм рт ст</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="EnterLineEdit">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit
+{
+color:black;
+background-color: #ff724f;
+border:1px solid black;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="styleSheet">
+         <string notr="true">QPushButton
+{
+background-color:green;
+}</string>
+        </property>
+        <property name="text">
+         <string>&gt;&gt;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="font">
+       <font>
+        <family>News701 BT</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel
+{
+background-color:#b9c6ff;
+color:black;
+border:2px solid black;
+}
+</string>
+      </property>
+      <property name="text">
+       <string>Па</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="label_3">
+      <property name="font">
+       <font>
+        <family>News701 BT</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel
+{
+background-color:#b9c6ff;
+color:black;
+border:2px solid black;
+}
+</string>
+      </property>
+      <property name="text">
+       <string>кПа</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QLabel" name="label_4">
+      <property name="font">
+       <font>
+        <family>News701 BT</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel
+{
+background-color:#b9c6ff;
+color:black;
+border:2px solid black;
+}
+</string>
+      </property>
+      <property name="text">
+       <string>МПа</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3">
+     <widget class="QLabel" name="label_5">
+      <property name="font">
+       <font>
+        <family>News701 BT</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel
+{
+background-color:#b9c6ff;
+color:black;
+border:2px solid black;
+}
+</string>
+      </property>
+      <property name="text">
+       <string>бар</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="4">
+     <widget class="QLabel" name="label_6">
+      <property name="font">
+       <font>
+        <family>News701 BT</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel
+{
+background-color:#b9c6ff;
+color:black;
+border:2px solid black;
+}
+</string>
+      </property>
+      <property name="text">
+       <string>кгс/см2</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="5">
+     <widget class="QLabel" name="label_7">
+      <property name="font">
+       <font>
+        <family>News701 BT</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel
+{
+background-color:#b9c6ff;
+color:black;
+border:2px solid black;
+}
+</string>
+      </property>
+      <property name="text">
+       <string>Атм</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="6">
+     <widget class="QLabel" name="label_8">
+      <property name="font">
+       <font>
+        <family>News701 BT</family>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel
+{
+background-color:#b9c6ff;
+color:black;
+border:2px solid black;
+}
+</string>
+      </property>
+      <property name="text">
+       <string>мм рт ст</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="7">
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QLineEdit" name="PasLineEdit">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit
+{
+color:black;
+background-color: #ff724f;
+border:1px solid black;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="KPasLineEdit">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit
+{
+color:black;
+background-color: #ff724f;
+border:1px solid black;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="MPasLineEdit">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit
+{
+color:black;
+background-color: #ff724f;
+border:1px solid black;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="BarLineEdit">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit
+{
+color:black;
+background-color: #ff724f;
+border:1px solid black;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="KGLineEdit">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit
+{
+color:black;
+background-color: #ff724f;
+border:1px solid black;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="AtmLineEdit">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit
+{
+color:black;
+background-color: #ff724f;
+border:1px solid black;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="RtutLineEdit">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit
+{
+color:black;
+background-color: #ff724f;
+border:1px solid black;
+}</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
