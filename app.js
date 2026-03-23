@@ -20,8 +20,11 @@ const UNTIS = {
 const elements = {
     inputValue: document.getElementById('inputValue'),
     inputUnit: document.getElementById('inputUnit'),
-    resultsGrid: document.getElementById('resultsGrid')
+    resultsGrid: document.getElementById('resultsGrid'),
+    toast: document.getElementById('toast')
 };
+
+let toastTimeout;
 
 /**
  * Инициализация приложения
@@ -94,20 +97,69 @@ function handleConversion() {
 
         // Конвертируем из Паскалей в целевую единицу
         const convertedValue = valueInPascals / targetUnit.factor;
+        const formattedValue = formatNumber(convertedValue);
         
         // Создаем DOM-элемент карточки
         const card = document.createElement('div');
-        card.className = 'bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center hover:shadow-md transition-shadow duration-200';
+        card.className = 'bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center hover:shadow-md transition-shadow duration-200';
         
         card.innerHTML = `
-            <span class="text-slate-600 font-medium">${targetUnit.name}</span>
-            <span class="text-lg font-bold text-blue-600 truncate ml-2" title="${convertedValue}">
-                ${formatNumber(convertedValue)}
-            </span>
+            <div class="flex flex-col flex-1 min-w-0 pr-4">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">${targetUnit.name}</span>
+                <span class="text-xl sm:text-2xl font-bold text-slate-800 break-all leading-tight">${formattedValue}</span>
+            </div>
+            <button onclick="copyToClipboard('${convertedValue}')" class="p-3 text-blue-500 bg-blue-50 rounded-xl hover:bg-blue-100 hover:text-blue-600 active:bg-blue-200 transition-colors flex-shrink-0" title="Скопировать">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </button>
         `;
         
         elements.resultsGrid.appendChild(card);
     });
+}
+
+/**
+ * Копирование значения в буфер обмена
+ */
+window.copyToClipboard = function(value) {
+    const formattedValue = formatNumber(parseFloat(value));
+    
+    // Используем современный Clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(formattedValue)
+            .then(() => showToast())
+            .catch(err => console.error('Ошибка копирования: ', err));
+    } else {
+        // Fallback для старых браузеров
+        const textArea = document.createElement("textarea");
+        textArea.value = formattedValue;
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showToast();
+        } catch (err) {
+            console.error('Fallback: Ошибка копирования', err);
+        }
+        document.body.removeChild(textArea);
+    }
+};
+
+/**
+ * Показ уведомления "Скопировано!"
+ */
+function showToast() {
+    if (!elements.toast) return;
+    
+    elements.toast.classList.remove('translate-y-20', 'opacity-0');
+    elements.toast.classList.add('translate-y-0', 'opacity-100');
+    
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        elements.toast.classList.remove('translate-y-0', 'opacity-100');
+        elements.toast.classList.add('translate-y-20', 'opacity-0');
+    }, 2000);
 }
 
 // Запускаем инициализацию, когда DOM полностью загружен
