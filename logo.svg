@@ -1,0 +1,26 @@
+<svg width="320" height="96" viewBox="0 0 320 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">Flex Convert</title>
+  <desc id="logoDesc">Flex Convert logo with a rounded conversion mark and wordmark.</desc>
+  <defs>
+    <linearGradient id="logoBg" x1="16" y1="16" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF2DB"/>
+      <stop offset="1" stop-color="#F6C790"/>
+    </linearGradient>
+    <linearGradient id="logoAccent" x1="28" y1="28" x2="66" y2="66" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B85D18"/>
+      <stop offset="1" stop-color="#D7872E"/>
+    </linearGradient>
+    <linearGradient id="logoAccentAlt" x1="24" y1="24" x2="68" y2="68" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F7ACF"/>
+      <stop offset="1" stop-color="#5CB9FF"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="80" height="80" rx="24" fill="url(#logoBg)"/>
+  <path d="M30 32H62L55.5 25.5" stroke="url(#logoAccent)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M66 64H34L40.5 70.5" stroke="url(#logoAccentAlt)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M54 27L62 32L54 37" fill="none" stroke="url(#logoAccent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M42 59L34 64L42 69" fill="none" stroke="url(#logoAccentAlt)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="48" cy="48" r="7" fill="#1F2933" fill-opacity="0.1"/>
+  <text x="108" y="42" fill="#1F2933" font-family="Manrope, 'Segoe UI', sans-serif" font-size="28" font-weight="800" letter-spacing="0.02em">Flex</text>
+  <text x="108" y="70" fill="#52606D" font-family="Manrope, 'Segoe UI', sans-serif" font-size="26" font-weight="700" letter-spacing="0.01em">Convert</text>
+</svg>

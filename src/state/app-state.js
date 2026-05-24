@@ -248,8 +248,29 @@ function getInitialTemperatureBaseAmount(state, category, sourceUnit) {
 }
 
 function getInitialCategoryId() {
+    const categoryFromUrl = getCategoryIdFromUrl();
+    if (categoryFromUrl) {
+        return categoryFromUrl;
+    }
+
     const storedCategory = localStorage.getItem(STORAGE_KEYS.activeCategory);
     return categoriesById.has(storedCategory) ? storedCategory : categoryRegistry[0].id;
+}
+
+function getCategoryIdFromUrl() {
+    const { location } = window;
+    const url = new URL(location.href);
+    const categoryParam = url.searchParams.get('category');
+    if (categoriesById.has(categoryParam)) {
+        return categoryParam;
+    }
+
+    const hashCategory = location.hash.replace(/^#/, '').trim();
+    if (categoriesById.has(hashCategory)) {
+        return hashCategory;
+    }
+
+    return null;
 }
 
 function getInitialCurrencySelection() {

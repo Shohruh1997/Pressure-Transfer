@@ -1,0 +1,71 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ogTitle ogDesc">
+  <title id="ogTitle">Flex Convert social preview</title>
+  <desc id="ogDesc">Preview image for Flex Convert with product name and converter categories.</desc>
+  <defs>
+    <linearGradient id="ogBg" x1="80" y1="60" x2="1120" y2="570" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF6EA"/>
+      <stop offset="0.55" stop-color="#F4E4CB"/>
+      <stop offset="1" stop-color="#E9D4B7"/>
+    </linearGradient>
+    <radialGradient id="ogGlowWarm" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(260 160) rotate(34) scale(420 300)">
+      <stop stop-color="#F7B15E" stop-opacity="0.44"/>
+      <stop offset="1" stop-color="#F7B15E" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ogGlowCool" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(960 470) rotate(180) scale(380 260)">
+      <stop stop-color="#55B5FF" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#55B5FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ogCard" x1="760" y1="150" x2="1030" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#FFF8EE" stop-opacity="0.92"/>
+    </linearGradient>
+    <linearGradient id="ogWarm" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#B85D18"/>
+      <stop offset="1" stop-color="#D7872E"/>
+    </linearGradient>
+    <linearGradient id="ogCool" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1F7ACF"/>
+      <stop offset="1" stop-color="#5CB9FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" rx="36" fill="url(#ogBg)"/>
+  <rect width="1200" height="630" rx="36" fill="url(#ogGlowWarm)"/>
+  <rect width="1200" height="630" rx="36" fill="url(#ogGlowCool)"/>
+
+  <g>
+    <rect x="96" y="112" width="120" height="120" rx="34" fill="#FFF9F1"/>
+    <path d="M126 146H192L177 131" stroke="url(#ogWarm)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M190 198H124L139 213" stroke="url(#ogCool)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M176 132L192 146L176 160" fill="none" stroke="url(#ogWarm)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M140 182L124 198L140 214" fill="none" stroke="url(#ogCool)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="158" cy="172" r="10" fill="#1F2933" fill-opacity="0.12"/>
+  </g>
+
+  <text x="96" y="300" fill="#1F2933" font-family="Manrope, 'Segoe UI', sans-serif" font-size="84" font-weight="800">Flex Convert</text>
+  <text x="96" y="360" fill="#52606D" font-family="Manrope, 'Segoe UI', sans-serif" font-size="34" font-weight="600">All-in-one web converter for currencies, pressure, temperature and units.</text>
+
+  <g opacity="0.96">
+    <rect x="96" y="416" width="178" height="54" rx="27" fill="#FFFFFF"/>
+    <text x="132" y="450" fill="#B85D18" font-family="Manrope, 'Segoe UI', sans-serif" font-size="24" font-weight="800">Currency</text>
+    <rect x="292" y="416" width="164" height="54" rx="27" fill="#FFFFFF"/>
+    <text x="330" y="450" fill="#1F7ACF" font-family="Manrope, 'Segoe UI', sans-serif" font-size="24" font-weight="800">Pressure</text>
+    <rect x="474" y="416" width="206" height="54" rx="27" fill="#FFFFFF"/>
+    <text x="510" y="450" fill="#1F2933" font-family="Manrope, 'Segoe UI', sans-serif" font-size="24" font-weight="800">Temperature</text>
+  </g>
+
+  <g>
+    <rect x="760" y="132" width="344" height="366" rx="34" fill="url(#ogCard)" stroke="#E6D4BE"/>
+    <text x="798" y="188" fill="#B85D18" font-family="Manrope, 'Segoe UI', sans-serif" font-size="22" font-weight="800" letter-spacing="0.18em">LIVE TOOL</text>
+    <text x="798" y="242" fill="#1F2933" font-family="Manrope, 'Segoe UI', sans-serif" font-size="34" font-weight="800">Fast conversion</text>
+    <text x="798" y="282" fill="#52606D" font-family="Manrope, 'Segoe UI', sans-serif" font-size="24" font-weight="600">Switch categories and get results instantly.</text>
+
+    <rect x="798" y="322" width="268" height="68" rx="20" fill="#FFFFFF" stroke="#E9DCCB"/>
+    <text x="826" y="364" fill="#1F2933" font-family="Manrope, 'Segoe UI', sans-serif" font-size="28" font-weight="800">125.0</text>
+    <text x="980" y="364" fill="#52606D" font-family="Manrope, 'Segoe UI', sans-serif" font-size="22" font-weight="700">base value</text>
+
+    <rect x="798" y="408" width="122" height="44" rx="22" fill="#FFF2E1"/>
+    <text x="832" y="436" fill="#B85D18" font-family="Manrope, 'Segoe UI', sans-serif" font-size="20" font-weight="800">Meters</text>
+    <rect x="936" y="408" width="130" height="44" rx="22" fill="#EEF7FF"/>
+    <text x="974" y="436" fill="#1F7ACF" font-family="Manrope, 'Segoe UI', sans-serif" font-size="20" font-weight="800">USD/EUR</text>
+  </g>
+</svg>

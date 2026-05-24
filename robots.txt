@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://flex-convert.ecomdev.uz/sitemap.xml

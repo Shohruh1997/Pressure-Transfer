@@ -495,8 +495,23 @@ function activateCategory(nextCategoryId) {
     resetCurrencyDragState();
 
     localStorage.setItem(STORAGE_KEYS.activeCategory, nextCategoryId);
+    syncCategoryUrl(nextCategoryId);
     ensureCategoryState(state, getActiveCategory(state));
     renderActiveCategory();
+}
+
+function syncCategoryUrl(categoryId) {
+    const url = new URL(window.location.href);
+    const isDefaultCategory = categoryId === categoryRegistry[0]?.id;
+
+    if (isDefaultCategory) {
+        url.searchParams.delete('category');
+    } else {
+        url.searchParams.set('category', categoryId);
+    }
+
+    url.hash = categoryId || '';
+    window.history.replaceState({}, '', url);
 }
 
 function renderActiveCategory() {
