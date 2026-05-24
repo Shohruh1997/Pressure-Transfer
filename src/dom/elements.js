@@ -17,6 +17,7 @@ export const elements = {
     resultsCount: document.getElementById('resultsCount'),
     resultsGrid: document.getElementById('resultsGrid'),
     currencySettingsModal: document.getElementById('currencySettingsModal'),
+    currencySettingsTitle: document.getElementById('currencySettingsTitle'),
     currencySettingsBody: document.getElementById('currencySettingsBody'),
     closeCurrencySettings: document.getElementById('closeCurrencySettings'),
     themeToggle: document.getElementById('themeToggle'),

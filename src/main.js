@@ -1,4 +1,4 @@
-import { STORAGE_KEYS, categoryRegistry } from './config/app-config.js';
+import { STORAGE_KEYS, categoriesById, categoryRegistry } from './config/app-config.js';
 import { elements } from './dom/elements.js';
 import { convertCategoryValue } from './features/conversion.js';
 import {
@@ -15,10 +15,39 @@ import {
     setCurrencyCalculatorVisibility,
     toggleCurrencySelection
 } from './features/currency.js';
-import { createInitialState, ensureCategoryState, ensureCurrencyState, getActiveCategory } from './state/app-state.js';
+import {
+    finalizePressureInput,
+    getPressureInputDisplayValue,
+    handlePressureInput,
+    movePressureUnitByDrop,
+    movePressureUnitToTop,
+    renderPressurePreviewPanel,
+    renderPressureSettingsOptions,
+    togglePressureUnitSelection
+} from './features/pressure.js';
+import {
+    finalizeTemperatureInput,
+    getTemperatureInputDisplayValue,
+    handleTemperatureInput,
+    moveTemperatureUnitByDrop,
+    moveTemperatureUnitToTop,
+    renderTemperaturePreviewPanel,
+    renderTemperatureSettingsOptions,
+    toggleTemperatureUnitSelection
+} from './features/temperature.js';
+import {
+    createInitialState,
+    ensureCategoryState,
+    ensureCurrencyState,
+    ensurePressureState,
+    ensureTemperatureState,
+    getActiveCategory
+} from './state/app-state.js';
 import { copyValue, parseInputValue } from './utils/formatters.js';
 
 const state = createInitialState();
+const pressureCategory = categoriesById.get('pressure');
+const temperatureCategory = categoriesById.get('temperature');
 let toastTimeout;
 let isInitialized = false;
 
@@ -36,6 +65,14 @@ function initApp() {
     isInitialized = true;
     applyStoredTheme();
     ensureCurrencyState(state);
+    if (pressureCategory) {
+        ensureCategoryState(state, pressureCategory);
+        ensurePressureState(state, pressureCategory);
+    }
+    if (temperatureCategory) {
+        ensureCategoryState(state, temperatureCategory);
+        ensureTemperatureState(state, temperatureCategory);
+    }
     renderCategoryNavigation();
     renderCurrencySettingsModal();
     ensureCategoryState(state, getActiveCategory(state));
@@ -69,27 +106,13 @@ function attachEventListeners() {
         }
     });
 
-    elements.categoryNav.addEventListener('click', event => {
-        const button = event.target.closest('[data-category-id]');
-        if (!button) {
+    elements.categoryNav.addEventListener('change', event => {
+        const select = event.target.closest('[data-category-select]');
+        if (!select) {
             return;
         }
 
-        const nextCategoryId = button.dataset.categoryId;
-        if (!nextCategoryId || nextCategoryId === state.activeCategoryId) {
-            return;
-        }
-
-        state.activeCategoryId = nextCategoryId;
-        if (nextCategoryId !== 'currency') {
-            state.isCurrencyCalculatorOpen = false;
-            state.isCurrencySettingsOpen = false;
-            resetCurrencyDragState();
-        }
-
-        localStorage.setItem(STORAGE_KEYS.activeCategory, nextCategoryId);
-        ensureCategoryState(state, getActiveCategory(state));
-        renderActiveCategory();
+        activateCategory(select.value);
     });
 
     elements.resultsGrid.addEventListener('pointerdown', event => {
@@ -136,6 +159,76 @@ function attachEventListeners() {
             return;
         }
 
+        const clearTemperatureButton = event.target.closest('[data-action="clear-temperature-input"]');
+        if (clearTemperatureButton && temperatureCategory) {
+            const unitId = clearTemperatureButton.dataset.temperatureUnitId;
+            if (!unitId) {
+                return;
+            }
+
+            handleTemperatureInput(state, temperatureCategory, unitId, '');
+            finalizeTemperatureInput(state, temperatureCategory);
+            refreshTemperatureInputs();
+            focusTemperatureInput(unitId);
+            return;
+        }
+
+        const clearPressureButton = event.target.closest('[data-action="clear-pressure-input"]');
+        if (clearPressureButton && pressureCategory) {
+            const unitId = clearPressureButton.dataset.pressureUnitId;
+            if (!unitId) {
+                return;
+            }
+
+            handlePressureInput(state, pressureCategory, unitId, '');
+            finalizePressureInput(state, pressureCategory);
+            refreshPressureInputs();
+            focusPressureInput(unitId);
+            return;
+        }
+
+        const clearButton = event.target.closest('[data-action="clear-currency-input"]');
+        if (clearButton) {
+            const currencyCode = clearButton.dataset.currencyCode;
+            if (!currencyCode) {
+                return;
+            }
+
+            handleCurrencyInput(state, currencyCode, '');
+            finalizeCurrencyInput(state);
+            refreshCurrencyInputs();
+            focusCurrencyInput(currencyCode);
+            return;
+        }
+
+        const pressureSettingsButton = event.target.closest('[data-action="open-pressure-settings"]');
+        if (pressureSettingsButton) {
+            openCurrencySettings();
+            return;
+        }
+
+        const temperatureSettingsButton = event.target.closest('[data-action="open-temperature-settings"]');
+        if (temperatureSettingsButton) {
+            openCurrencySettings();
+            return;
+        }
+
+        const movePressureButton = event.target.closest('[data-action="move-pressure-unit-top"]');
+        if (movePressureButton) {
+            if (movePressureUnitToTop(state, movePressureButton.dataset.pressureUnitId)) {
+                persistPressureState();
+            }
+            return;
+        }
+
+        const moveTemperatureButton = event.target.closest('[data-action="move-temperature-unit-top"]');
+        if (moveTemperatureButton) {
+            if (moveTemperatureUnitToTop(state, moveTemperatureButton.dataset.temperatureUnitId)) {
+                persistTemperatureState();
+            }
+            return;
+        }
+
         const openButton = event.target.closest('[data-action="open-currency-settings"]');
         if (openButton) {
             openCurrencySettings();
@@ -153,6 +246,22 @@ function attachEventListeners() {
     });
 
     elements.categoryCustomContent.addEventListener('focusin', event => {
+        const temperatureInput = event.target.closest('.temperature-input[data-temperature-unit-id]');
+        if (temperatureInput) {
+            state.temperatureLastActiveUnitId = temperatureInput.dataset.temperatureUnitId;
+            state.temperatureDraftValue = temperatureInput.value;
+            selectTextInputValue(temperatureInput);
+            return;
+        }
+
+        const pressureInput = event.target.closest('.pressure-input[data-pressure-unit-id]');
+        if (pressureInput) {
+            state.pressureLastActiveUnitId = pressureInput.dataset.pressureUnitId;
+            state.pressureDraftValue = pressureInput.value;
+            selectTextInputValue(pressureInput);
+            return;
+        }
+
         const input = event.target.closest('.currency-input[data-currency-code]');
         if (!input) {
             return;
@@ -160,9 +269,24 @@ function attachEventListeners() {
 
         state.currencyLastActiveCode = input.dataset.currencyCode;
         state.currencyDraftValue = input.value;
+        selectTextInputValue(input);
     });
 
     elements.categoryCustomContent.addEventListener('input', event => {
+        const temperatureInput = event.target.closest('.temperature-input[data-temperature-unit-id]');
+        if (temperatureInput && temperatureCategory) {
+            temperatureInput.value = handleTemperatureInput(state, temperatureCategory, temperatureInput.dataset.temperatureUnitId, temperatureInput.value);
+            refreshTemperatureInputs(temperatureInput.dataset.temperatureUnitId);
+            return;
+        }
+
+        const pressureInput = event.target.closest('.pressure-input[data-pressure-unit-id]');
+        if (pressureInput && pressureCategory) {
+            pressureInput.value = handlePressureInput(state, pressureCategory, pressureInput.dataset.pressureUnitId, pressureInput.value);
+            refreshPressureInputs(pressureInput.dataset.pressureUnitId);
+            return;
+        }
+
         const input = event.target.closest('.currency-input[data-currency-code]');
         if (!input) {
             return;
@@ -170,10 +294,23 @@ function attachEventListeners() {
 
         input.value = handleCurrencyInput(state, input.dataset.currencyCode, input.value);
         refreshCurrencyInputs(input.dataset.currencyCode);
-        renderResults();
     });
 
     elements.categoryCustomContent.addEventListener('focusout', event => {
+        const temperatureInput = event.target.closest('.temperature-input[data-temperature-unit-id]');
+        if (temperatureInput && temperatureCategory) {
+            finalizeTemperatureInput(state, temperatureCategory);
+            refreshTemperatureInputs();
+            return;
+        }
+
+        const pressureInput = event.target.closest('.pressure-input[data-pressure-unit-id]');
+        if (pressureInput && pressureCategory) {
+            finalizePressureInput(state, pressureCategory);
+            refreshPressureInputs();
+            return;
+        }
+
         const input = event.target.closest('.currency-input[data-currency-code]');
         if (!input) {
             return;
@@ -181,7 +318,6 @@ function attachEventListeners() {
 
         finalizeCurrencyInput(state);
         refreshCurrencyInputs();
-        renderResults();
     });
 
     elements.currencySettingsModal.addEventListener('click', event => {
@@ -193,6 +329,34 @@ function attachEventListeners() {
     elements.currencySettingsBody.addEventListener('change', event => {
         const checkbox = event.target.closest('input[data-currency-code]');
         if (!checkbox) {
+            return;
+        }
+
+        if (getActiveCategory(state).id === 'temperature' && temperatureCategory) {
+            const result = toggleTemperatureUnitSelection(state, temperatureCategory, checkbox.dataset.currencyCode, checkbox.checked);
+            if (result.error) {
+                showToast(result.error);
+                renderCurrencySettingsModal();
+                return;
+            }
+
+            if (result.changed) {
+                persistTemperatureState();
+            }
+            return;
+        }
+
+        if (getActiveCategory(state).id === 'pressure' && pressureCategory) {
+            const result = togglePressureUnitSelection(state, pressureCategory, checkbox.dataset.currencyCode, checkbox.checked);
+            if (result.error) {
+                showToast(result.error);
+                renderCurrencySettingsModal();
+                return;
+            }
+
+            if (result.changed) {
+                persistPressureState();
+            }
             return;
         }
 
@@ -264,7 +428,15 @@ function attachEventListeners() {
         }
 
         event.preventDefault();
-        if (moveCurrencyByDrop(state, state.dragCurrencyCode, option.dataset.currencyCode, state.dragTargetPosition || 'before')) {
+        if (getActiveCategory(state).id === 'temperature') {
+            if (moveTemperatureUnitByDrop(state, state.dragCurrencyCode, option.dataset.currencyCode, state.dragTargetPosition || 'before')) {
+                persistTemperatureState();
+            }
+        } else if (getActiveCategory(state).id === 'pressure') {
+            if (movePressureUnitByDrop(state, state.dragCurrencyCode, option.dataset.currencyCode, state.dragTargetPosition || 'before')) {
+                persistPressureState();
+            }
+        } else if (moveCurrencyByDrop(state, state.dragCurrencyCode, option.dataset.currencyCode, state.dragTargetPosition || 'before')) {
             persistCurrencyState();
         }
         resetCurrencyDragState();
@@ -290,23 +462,52 @@ function attachEventListeners() {
 }
 
 function renderCategoryNavigation() {
-    elements.categoryNav.innerHTML = categoryRegistry.map(category => `
-        <button
-            type="button"
-            data-category-id="${category.id}"
-            class="category-pill ${category.id === state.activeCategoryId ? 'is-active' : ''} rounded-full px-4 py-3 text-sm font-bold uppercase tracking-[0.18em]"
-            aria-pressed="${category.id === state.activeCategoryId}"
-        >
-            <span class="block text-left">${category.name}</span>
-            <span class="mt-1 block text-[0.65rem] font-semibold uppercase tracking-[0.22em] opacity-80">${category.shortName}</span>
-        </button>
-    `).join('');
+    elements.categoryNav.innerHTML = `
+        <label class="category-select-label" for="categorySelect">
+            <span class="category-select-caption">Раздел величины</span>
+            <div class="category-select-wrap">
+                <select id="categorySelect" class="category-select select-control" data-category-select aria-label="Выбор раздела величин">
+                    ${categoryRegistry.map(category => `
+                        <option value="${category.id}" ${category.id === state.activeCategoryId ? 'selected' : ''}>
+                            ${category.name} - ${category.shortName}
+                        </option>
+                    `).join('')}
+                </select>
+                <span class="category-select-icon" aria-hidden="true">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </span>
+            </div>
+        </label>
+    `;
+}
+
+function activateCategory(nextCategoryId) {
+    if (!nextCategoryId || nextCategoryId === state.activeCategoryId) {
+        return;
+    }
+
+    state.activeCategoryId = nextCategoryId;
+    if (nextCategoryId !== 'currency') {
+        state.isCurrencyCalculatorOpen = false;
+    }
+
+    state.isCurrencySettingsOpen = false;
+    resetCurrencyDragState();
+
+    localStorage.setItem(STORAGE_KEYS.activeCategory, nextCategoryId);
+    ensureCategoryState(state, getActiveCategory(state));
+    renderActiveCategory();
 }
 
 function renderActiveCategory() {
     const category = getActiveCategory(state);
     ensureCategoryState(state, category);
     ensureCurrencyState(state);
+    if (category.id === 'pressure') {
+        ensurePressureState(state, category);
+    } else if (category.id === 'temperature') {
+        ensureTemperatureState(state, category);
+    }
 
     renderCategoryNavigation();
     renderCurrencySettingsModal();
@@ -325,11 +526,11 @@ function renderActiveCategory() {
 }
 
 function applyCategorySurface(category) {
-    const isCurrencyCategory = category.id === 'currency';
+    const usesInlinePreview = category.id === 'currency' || category.id === 'pressure' || category.id === 'temperature';
     elements.appShell.dataset.activeCategory = category.id;
-    elements.genericInputControls.classList.toggle('is-hidden', isCurrencyCategory);
-    elements.resultsCount.classList.toggle('is-hidden', isCurrencyCategory);
-    elements.categoryCustomContent.innerHTML = isCurrencyCategory ? renderCurrencyPreviewPanel(state) : '';
+    elements.genericInputControls.classList.toggle('is-hidden', usesInlinePreview);
+    elements.resultsCount.classList.toggle('is-hidden', usesInlinePreview);
+    elements.categoryCustomContent.innerHTML = category.id === 'currency' ? renderCurrencyPreviewPanel(state) : '';
 }
 
 function populateSourceUnits(category) {
@@ -368,6 +569,18 @@ function renderResults() {
     if (category.id === 'currency') {
         elements.resultsCount.textContent = '';
         elements.categoryCustomContent.innerHTML = renderCurrencyPreviewPanel(state);
+        return;
+    }
+
+    if (category.id === 'pressure') {
+        elements.resultsCount.textContent = '';
+        elements.categoryCustomContent.innerHTML = renderPressurePreviewPanel(state, category);
+        return;
+    }
+
+    if (category.id === 'temperature') {
+        elements.resultsCount.textContent = '';
+        elements.categoryCustomContent.innerHTML = renderTemperaturePreviewPanel(state, category);
         return;
     }
 
@@ -446,14 +659,26 @@ function updateResultsHeaderState(category = getActiveCategory(state)) {
 }
 
 function renderCurrencySettingsModal() {
-    elements.currencySettingsModal.classList.toggle('hidden', !state.isCurrencySettingsOpen);
-    elements.currencySettingsModal.setAttribute('aria-hidden', String(!state.isCurrencySettingsOpen));
-    document.body.classList.toggle('modal-open', state.isCurrencySettingsOpen);
-    elements.currencySettingsBody.innerHTML = renderCurrencySettingsOptions(state);
+    const settingsConfig = getSettingsModalConfig();
+    const isOpen = state.isCurrencySettingsOpen && Boolean(settingsConfig);
+
+    elements.currencySettingsModal.classList.toggle('hidden', !isOpen);
+    elements.currencySettingsModal.setAttribute('aria-hidden', String(!isOpen));
+    document.body.classList.toggle('modal-open', isOpen);
+
+    if (!settingsConfig) {
+        elements.currencySettingsTitle.textContent = 'Настройки';
+        elements.currencySettingsBody.innerHTML = '';
+        return;
+    }
+
+    elements.currencySettingsTitle.textContent = settingsConfig.title;
+    elements.currencySettingsBody.innerHTML = settingsConfig.body;
 }
 
 function openCurrencySettings() {
-    if (getActiveCategory(state).id !== 'currency') {
+    const categoryId = getActiveCategory(state).id;
+    if (categoryId !== 'currency' && categoryId !== 'pressure' && categoryId !== 'temperature') {
         return;
     }
 
@@ -477,6 +702,63 @@ function persistCurrencyState() {
     }
 
     renderCurrencySettingsModal();
+}
+
+function persistPressureState() {
+    if (!pressureCategory) {
+        return;
+    }
+
+    ensurePressureState(state, pressureCategory);
+    localStorage.setItem(STORAGE_KEYS.pressureUnitsOrder, JSON.stringify(state.pressureUnitsOrder));
+
+    if (getActiveCategory(state).id === 'pressure') {
+        applyCategorySurface(getActiveCategory(state));
+        renderResults();
+    }
+
+    renderCurrencySettingsModal();
+}
+
+function persistTemperatureState() {
+    if (!temperatureCategory) {
+        return;
+    }
+
+    ensureTemperatureState(state, temperatureCategory);
+    localStorage.setItem(STORAGE_KEYS.temperatureUnitsOrder, JSON.stringify(state.temperatureUnitsOrder));
+
+    if (getActiveCategory(state).id === 'temperature') {
+        applyCategorySurface(getActiveCategory(state));
+        renderResults();
+    }
+
+    renderCurrencySettingsModal();
+}
+
+function getSettingsModalConfig(category = getActiveCategory(state)) {
+    if (category.id === 'currency') {
+        return {
+            title: 'Выбор валют',
+            body: renderCurrencySettingsOptions(state)
+        };
+    }
+
+    if (category.id === 'pressure') {
+        return {
+            title: 'Единицы давления',
+            body: renderPressureSettingsOptions(state, category)
+        };
+    }
+
+    if (category.id === 'temperature') {
+        return {
+            title: 'Единицы температуры',
+            body: renderTemperatureSettingsOptions(state, category)
+        };
+    }
+
+    return null;
 }
 
 function showToast(label) {
@@ -516,11 +798,79 @@ function refreshCurrencyInputs(activeCode = null) {
     inputs.forEach(input => {
         const code = input.dataset.currencyCode;
         if (activeCode && code === activeCode) {
+            updateCurrencyClearButtonVisibility(code, input.value);
             return;
         }
 
         input.value = getCurrencyInputDisplayValue(state, code);
+        updateCurrencyClearButtonVisibility(code, input.value);
     });
+}
+
+function updateCurrencyClearButtonVisibility(code, value) {
+    const clearButton = elements.categoryCustomContent.querySelector(`.currency-row-clear[data-currency-code="${code}"]`);
+    if (!clearButton) {
+        return;
+    }
+
+    const hasValue = Boolean(value);
+    clearButton.classList.toggle('is-visible', hasValue);
+    clearButton.disabled = !hasValue;
+    clearButton.setAttribute('aria-hidden', String(!hasValue));
+}
+
+function refreshPressureInputs(activeUnitId = null) {
+    const inputs = elements.categoryCustomContent.querySelectorAll('.pressure-input[data-pressure-unit-id]');
+
+    inputs.forEach(input => {
+        const unitId = input.dataset.pressureUnitId;
+        if (activeUnitId && unitId === activeUnitId) {
+            updatePressureClearButtonVisibility(unitId, input.value);
+            return;
+        }
+
+        input.value = getPressureInputDisplayValue(state, pressureCategory, unitId);
+        updatePressureClearButtonVisibility(unitId, input.value);
+    });
+}
+
+function updatePressureClearButtonVisibility(unitId, value) {
+    const clearButton = elements.categoryCustomContent.querySelector(`.currency-row-clear[data-pressure-unit-id="${unitId}"]`);
+    if (!clearButton) {
+        return;
+    }
+
+    const hasValue = Boolean(value);
+    clearButton.classList.toggle('is-visible', hasValue);
+    clearButton.disabled = !hasValue;
+    clearButton.setAttribute('aria-hidden', String(!hasValue));
+}
+
+function refreshTemperatureInputs(activeUnitId = null) {
+    const inputs = elements.categoryCustomContent.querySelectorAll('.temperature-input[data-temperature-unit-id]');
+
+    inputs.forEach(input => {
+        const unitId = input.dataset.temperatureUnitId;
+        if (activeUnitId && unitId === activeUnitId) {
+            updateTemperatureClearButtonVisibility(unitId, input.value);
+            return;
+        }
+
+        input.value = getTemperatureInputDisplayValue(state, temperatureCategory, unitId);
+        updateTemperatureClearButtonVisibility(unitId, input.value);
+    });
+}
+
+function updateTemperatureClearButtonVisibility(unitId, value) {
+    const clearButton = elements.categoryCustomContent.querySelector(`.currency-row-clear[data-temperature-unit-id="${unitId}"]`);
+    if (!clearButton) {
+        return;
+    }
+
+    const hasValue = Boolean(value);
+    clearButton.classList.toggle('is-visible', hasValue);
+    clearButton.disabled = !hasValue;
+    clearButton.setAttribute('aria-hidden', String(!hasValue));
 }
 
 function setCurrencyDropTarget(code, position) {
@@ -567,4 +917,44 @@ function focusCurrencyCalculatorInput() {
     input.focus({ preventScroll: true });
     const caretPosition = input.value.length;
     input.setSelectionRange(caretPosition, caretPosition);
+}
+
+function focusCurrencyInput(code) {
+    const input = elements.categoryCustomContent.querySelector(`.currency-input[data-currency-code="${code}"]`);
+    if (!input) {
+        return;
+    }
+
+    input.focus({ preventScroll: true });
+    selectTextInputValue(input);
+}
+
+function focusPressureInput(unitId) {
+    const input = elements.categoryCustomContent.querySelector(`.pressure-input[data-pressure-unit-id="${unitId}"]`);
+    if (!input) {
+        return;
+    }
+
+    input.focus({ preventScroll: true });
+    selectTextInputValue(input);
+}
+
+function focusTemperatureInput(unitId) {
+    const input = elements.categoryCustomContent.querySelector(`.temperature-input[data-temperature-unit-id="${unitId}"]`);
+    if (!input) {
+        return;
+    }
+
+    input.focus({ preventScroll: true });
+    selectTextInputValue(input);
+}
+
+function selectTextInputValue(input) {
+    requestAnimationFrame(() => {
+        if (document.activeElement !== input) {
+            return;
+        }
+
+        input.setSelectionRange(0, input.value.length);
+    });
 }

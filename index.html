@@ -110,25 +110,60 @@
             box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
         }
 
-        .category-pill {
-            border: 1px solid var(--border);
-            background: var(--surface-muted);
+        .category-toolbar {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .category-nav-shell {
+            min-width: 0;
+        }
+
+        .category-select-label {
+            display: block;
+        }
+
+        .category-select-caption {
             color: var(--text-soft);
-            transition: 180ms ease;
+            display: block;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.65rem;
+            text-transform: uppercase;
         }
 
-        .category-pill:hover,
-        .category-pill:focus-visible {
-            border-color: rgba(184, 93, 24, 0.3);
-            color: var(--text);
-            transform: translateY(-1px);
+        .category-select-wrap {
+            position: relative;
         }
 
-        .category-pill.is-active {
-            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-            border-color: transparent;
-            color: #fff;
-            box-shadow: 0 12px 24px rgba(184, 93, 24, 0.28);
+        .category-select {
+            appearance: none;
+            background: linear-gradient(180deg, var(--surface-strong), var(--surface-muted));
+            border-radius: 1.2rem;
+            font-size: 0.98rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            min-height: 3.5rem;
+            padding: 0.95rem 3.4rem 0.95rem 1rem;
+        }
+
+        .category-select-icon {
+            align-items: center;
+            color: var(--text-soft);
+            display: inline-flex;
+            inset: 0 1rem 0 auto;
+            pointer-events: none;
+            position: absolute;
+        }
+
+        .category-select:focus {
+            box-shadow: 0 0 0 4px rgba(184, 93, 24, 0.12);
+        }
+
+        .category-toolbar .currency-calculator-toggle {
+            justify-self: start;
+            white-space: nowrap;
         }
 
         .field-control,
@@ -268,6 +303,11 @@
             gap: 0.75rem;
         }
 
+        .pressure-preview-row,
+        .temperature-preview-row {
+            grid-template-columns: minmax(0, 1fr) auto auto auto;
+        }
+
         .currency-preview-row {
             align-items: center;
             background: var(--surface-strong);
@@ -275,7 +315,7 @@
             border-radius: 1rem;
             display: grid;
             gap: 0.85rem;
-            grid-template-columns: minmax(0, 1fr) auto auto;
+            grid-template-columns: minmax(0, 1fr) auto auto auto;
             padding: 0.95rem 1rem;
             transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
         }
@@ -319,6 +359,14 @@
             font-weight: 800;
         }
 
+        .pressure-preview-row .currency-flag,
+        .temperature-preview-row .currency-flag {
+            font-size: 0.74rem;
+            letter-spacing: 0.05em;
+            min-width: 3rem;
+            padding: 0 0.55rem;
+        }
+
         .currency-row-name {
             color: var(--text-soft);
             font-size: 0.82rem;
@@ -345,7 +393,8 @@
             opacity: 0.7;
         }
 
-        .currency-row-action {
+        .currency-row-action,
+        .currency-row-clear {
             align-items: center;
             background: var(--surface-muted);
             border: 1px solid transparent;
@@ -354,16 +403,36 @@
             display: inline-flex;
             height: 2.3rem;
             justify-content: center;
-            transition: border-color 160ms ease, color 160ms ease, transform 160ms ease, background-color 160ms ease;
+            transition: border-color 160ms ease, color 160ms ease, transform 160ms ease, background-color 160ms ease, opacity 160ms ease;
             width: 2.3rem;
         }
 
-        button.currency-row-action {
+        .currency-row-clear {
+            background: var(--accent-soft);
+            border-color: rgba(59, 130, 246, 0.18);
+            color: var(--accent);
+            font-size: 1rem;
+            font-weight: 800;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.92);
+        }
+
+        .currency-row-clear.is-visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        button.currency-row-action,
+        button.currency-row-clear {
             cursor: pointer;
         }
 
         button.currency-row-action:hover,
-        button.currency-row-action:focus-visible {
+        button.currency-row-action:focus-visible,
+        button.currency-row-clear:hover,
+        button.currency-row-clear:focus-visible {
             background: var(--accent-soft);
             border-color: rgba(59, 130, 246, 0.35);
             color: var(--accent);
@@ -426,6 +495,7 @@
             justify-content: center;
             min-height: 2.25rem;
             padding: 0 0.9rem;
+            width: fit-content;
             transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease;
         }
 
@@ -765,8 +835,24 @@
         }
 
         @media (max-width: 640px) {
+            .category-select-caption {
+                font-size: 0.7rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .category-select {
+                font-size: 0.92rem;
+                min-height: 3.2rem;
+                padding-right: 3rem;
+            }
+
             .currency-preview-row {
-                grid-template-columns: minmax(0, 1fr) auto;
+                grid-template-columns: minmax(0, 1fr) auto auto;
+            }
+
+            .pressure-preview-row,
+            .temperature-preview-row {
+                grid-template-columns: minmax(0, 1fr) auto auto;
             }
 
             .currency-row-action {
@@ -808,6 +894,17 @@
                 align-items: flex-start;
             }
         }
+
+        @media (min-width: 960px) {
+            .category-toolbar {
+                align-items: end;
+                grid-template-columns: minmax(0, 1fr) auto;
+            }
+
+            .category-toolbar .currency-calculator-toggle {
+                justify-self: end;
+            }
+        }
     </style>
 </head>
 <body>
@@ -829,8 +926,8 @@
                             </button>
                         </div>
 
-                        <div class="flex flex-wrap items-center justify-between gap-3">
-                            <nav id="categoryNav" class="flex flex-wrap gap-3" aria-label="Навигация по категориям"></nav>
+                        <div class="category-toolbar">
+                            <div id="categoryNav" class="category-nav-shell"></div>
 
                             <button id="calculatorToggleButton" type="button" class="currency-calculator-toggle" aria-pressed="false">
                                 <span id="calculatorToggleLabel">Калькулятор</span>

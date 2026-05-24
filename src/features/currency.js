@@ -291,6 +291,7 @@ function getCurrencyAmount(state, code) {
 
 function renderCurrencyPreviewRow(state, item) {
     const displayValue = escapeHtmlAttribute(getCurrencyInputDisplayValue(state, item.code));
+    const hasDisplayValue = displayValue.length > 0;
 
     return `
         <article class="currency-preview-row">
@@ -312,6 +313,15 @@ function renderCurrencyPreviewRow(state, item) {
                 placeholder="0"
                 aria-label="Сумма в ${item.code}"
             >
+            <button
+                type="button"
+                class="currency-row-clear ${hasDisplayValue ? 'is-visible' : ''}"
+                data-action="clear-currency-input"
+                data-currency-code="${item.code}"
+                aria-label="Очистить сумму ${item.code}"
+                title="Очистить"
+                ${hasDisplayValue ? '' : 'disabled aria-hidden="true"'}
+            >&times;</button>
             <button type="button" class="currency-row-action" data-action="move-currency-top" data-currency-code="${item.code}" aria-label="Поднять ${item.code} наверх">↑</button>
         </article>
     `;
