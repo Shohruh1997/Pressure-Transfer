@@ -466,9 +466,24 @@
             }
 
             .currency-preview-row {
-                gap: 0.45rem;
-                grid-template-columns: auto minmax(3.25rem, 1fr) auto;
+                gap: 0.4rem;
+                grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
                 padding: 0.55rem 0.6rem;
+            }
+
+            .factor-preview-row .currency-flag,
+            .pressure-preview-row .currency-flag,
+            .temperature-preview-row .currency-flag {
+                font-size: 0.68rem;
+                height: 1.85rem;
+                min-width: 2.5rem;
+                padding: 0 0.4rem;
+            }
+
+            .factor-preview-row .currency-row-label,
+            .pressure-preview-row .currency-row-label,
+            .temperature-preview-row .currency-row-label {
+                max-width: 2.75rem;
             }
 
             .factor-preview-row .currency-row-code,
@@ -477,20 +492,15 @@
                 display: none;
             }
 
-            .factor-preview-row .currency-row-label,
-            .pressure-preview-row .currency-row-label,
-            .temperature-preview-row .currency-row-label {
-                max-width: none;
-            }
-
             .currency-row-action,
             .currency-row-clear {
                 height: 1.85rem;
                 width: 1.85rem;
             }
 
+            .currency-row-clear,
             .currency-row-clear.is-visible {
-                width: 1.85rem;
+                width: 1.75rem;
             }
         }
 
@@ -510,16 +520,23 @@
             background: transparent;
             border: none;
             color: var(--text);
-            font-size: 1.05rem;
+            font-size: clamp(0.88rem, 2.8vw, 1.05rem);
             font-weight: 800;
             letter-spacing: -0.02em;
             min-width: 0;
             outline: none;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: hidden;
             padding: 0;
+            scrollbar-width: none;
             text-align: right;
-            text-overflow: ellipsis;
+            white-space: nowrap;
             width: 100%;
+            -ms-overflow-style: none;
+        }
+
+        .currency-row-input::-webkit-scrollbar {
+            display: none;
         }
 
         .currency-row-actions {
@@ -558,15 +575,13 @@
             font-weight: 800;
             margin: 0;
             opacity: 0;
-            overflow: hidden;
             pointer-events: none;
-            width: 0;
+            width: 2rem;
         }
 
         .currency-row-clear.is-visible {
             opacity: 1;
             pointer-events: auto;
-            width: 2rem;
         }
 
         button.currency-row-action,
