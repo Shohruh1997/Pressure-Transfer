@@ -1,6 +1,5 @@
 import { STORAGE_KEYS, categoriesById, categoryRegistry } from './config/app-config.js';
 import { elements } from './dom/elements.js';
-import { convertCategoryValue } from './features/conversion.js';
 import {
     applyCurrencyCalculatorAction,
     finalizeCurrencyInput,
@@ -16,16 +15,19 @@ import {
     toggleCurrencySelection
 } from './features/currency.js';
 import {
-    finalizePressureInput,
-    getPressureInputDisplayValue,
-    handlePressureInput,
-    movePressureUnitByDrop,
-    movePressureUnitToTop,
-    renderPressurePreviewPanel,
-    renderPressureSettingsOptions,
-    togglePressureUnitSelection
-} from './features/pressure.js';
+    ensureFactorPreviewState,
+    finalizeFactorInput,
+    getFactorInputDisplayValue,
+    handleFactorInput,
+    moveFactorUnitByDrop,
+    moveFactorUnitToTop,
+    persistFactorUnitsOrder,
+    renderFactorPreviewPanel,
+    renderFactorSettingsOptions,
+    toggleFactorUnitSelection
+} from './features/factor-preview.js';
 import {
+    ensureTemperaturePreviewState,
     finalizeTemperatureInput,
     getTemperatureInputDisplayValue,
     handleTemperatureInput,
@@ -39,14 +41,12 @@ import {
     createInitialState,
     ensureCategoryState,
     ensureCurrencyState,
-    ensurePressureState,
     ensureTemperatureState,
     getActiveCategory
 } from './state/app-state.js';
-import { copyValue, parseInputValue } from './utils/formatters.js';
+import { copyValue } from './utils/formatters.js';
 
 const state = createInitialState();
-const pressureCategory = categoriesById.get('pressure');
 const temperatureCategory = categoriesById.get('temperature');
 let toastTimeout;
 let isInitialized = false;
@@ -65,13 +65,17 @@ function initApp() {
     isInitialized = true;
     applyStoredTheme();
     ensureCurrencyState(state);
-    if (pressureCategory) {
-        ensureCategoryState(state, pressureCategory);
-        ensurePressureState(state, pressureCategory);
-    }
+    categoryRegistry
+        .filter(category => category.adapter === 'factor')
+        .forEach(category => {
+            ensureCategoryState(state, category);
+            ensureFactorPreviewState(state, category);
+        });
+
     if (temperatureCategory) {
         ensureCategoryState(state, temperatureCategory);
         ensureTemperatureState(state, temperatureCategory);
+        ensureTemperaturePreviewState(state, temperatureCategory);
     }
     renderCategoryNavigation();
     renderCurrencySettingsModal();
@@ -83,12 +87,20 @@ function initApp() {
 function attachEventListeners() {
     elements.inputValue.addEventListener('input', () => {
         const category = getActiveCategory(state);
+        if (usesMultiUnitPanel(category)) {
+            return;
+        }
+
         state.values[category.id] = elements.inputValue.value;
         renderResults();
     });
 
     elements.inputUnit.addEventListener('change', () => {
         const category = getActiveCategory(state);
+        if (usesMultiUnitPanel(category)) {
+            return;
+        }
+
         state.sourceUnits[category.id] = elements.inputUnit.value;
         renderResults();
     });
@@ -152,10 +164,25 @@ function attachEventListeners() {
         copyValue(button.dataset.copyValue, button.dataset.copyLabel || 'Скопировано в буфер', showToast);
     });
 
-    elements.categoryCustomContent.addEventListener('click', event => {
+    elements.inputPanel.addEventListener('click', event => {
         const copyButton = event.target.closest('[data-copy-value]');
         if (copyButton) {
             copyValue(copyButton.dataset.copyValue, copyButton.dataset.copyLabel || 'Скопировано в буфер', showToast);
+            return;
+        }
+
+        const clearFactorButton = event.target.closest('[data-action="clear-factor-input"]');
+        if (clearFactorButton) {
+            const category = getActiveCategory(state);
+            const unitId = clearFactorButton.dataset.factorUnitId;
+            if (!unitId || category.adapter !== 'factor') {
+                return;
+            }
+
+            handleFactorInput(state, category, unitId, '');
+            finalizeFactorInput(state, category);
+            refreshFactorInputs(category, unitId);
+            focusFactorInput(unitId);
             return;
         }
 
@@ -168,22 +195,8 @@ function attachEventListeners() {
 
             handleTemperatureInput(state, temperatureCategory, unitId, '');
             finalizeTemperatureInput(state, temperatureCategory);
-            refreshTemperatureInputs();
+            refreshTemperatureInputs(unitId);
             focusTemperatureInput(unitId);
-            return;
-        }
-
-        const clearPressureButton = event.target.closest('[data-action="clear-pressure-input"]');
-        if (clearPressureButton && pressureCategory) {
-            const unitId = clearPressureButton.dataset.pressureUnitId;
-            if (!unitId) {
-                return;
-            }
-
-            handlePressureInput(state, pressureCategory, unitId, '');
-            finalizePressureInput(state, pressureCategory);
-            refreshPressureInputs();
-            focusPressureInput(unitId);
             return;
         }
 
@@ -201,8 +214,8 @@ function attachEventListeners() {
             return;
         }
 
-        const pressureSettingsButton = event.target.closest('[data-action="open-pressure-settings"]');
-        if (pressureSettingsButton) {
+        const factorSettingsButton = event.target.closest('[data-action="open-factor-settings"]');
+        if (factorSettingsButton) {
             openCurrencySettings();
             return;
         }
@@ -213,25 +226,26 @@ function attachEventListeners() {
             return;
         }
 
-        const movePressureButton = event.target.closest('[data-action="move-pressure-unit-top"]');
-        if (movePressureButton) {
-            if (movePressureUnitToTop(state, movePressureButton.dataset.pressureUnitId)) {
-                persistPressureState();
+        const openButton = event.target.closest('[data-action="open-currency-settings"]');
+        if (openButton) {
+            openCurrencySettings();
+            return;
+        }
+
+        const moveFactorButton = event.target.closest('[data-action="move-factor-unit-top"]');
+        if (moveFactorButton) {
+            const category = getActiveCategory(state);
+            if (category.adapter === 'factor' && moveFactorUnitToTop(state, category, moveFactorButton.dataset.factorUnitId)) {
+                persistFactorPreviewState(category);
             }
             return;
         }
 
         const moveTemperatureButton = event.target.closest('[data-action="move-temperature-unit-top"]');
         if (moveTemperatureButton) {
-            if (moveTemperatureUnitToTop(state, moveTemperatureButton.dataset.temperatureUnitId)) {
+            if (moveTemperatureUnitToTop(moveTemperatureButton.dataset.temperatureUnitId)) {
                 persistTemperatureState();
             }
-            return;
-        }
-
-        const openButton = event.target.closest('[data-action="open-currency-settings"]');
-        if (openButton) {
-            openCurrencySettings();
             return;
         }
 
@@ -246,19 +260,28 @@ function attachEventListeners() {
     });
 
     elements.categoryCustomContent.addEventListener('focusin', event => {
+        const factorInput = event.target.closest('.factor-input[data-factor-unit-id]');
+        if (factorInput) {
+            const category = getActiveCategory(state);
+            if (category.adapter !== 'factor') {
+                return;
+            }
+
+            const preview = state.categoryPreviews[category.id];
+            if (preview) {
+                preview.lastActiveUnitId = factorInput.dataset.factorUnitId;
+                preview.draftValue = factorInput.value;
+            }
+
+            selectTextInputValue(factorInput);
+            return;
+        }
+
         const temperatureInput = event.target.closest('.temperature-input[data-temperature-unit-id]');
         if (temperatureInput) {
             state.temperatureLastActiveUnitId = temperatureInput.dataset.temperatureUnitId;
             state.temperatureDraftValue = temperatureInput.value;
             selectTextInputValue(temperatureInput);
-            return;
-        }
-
-        const pressureInput = event.target.closest('.pressure-input[data-pressure-unit-id]');
-        if (pressureInput) {
-            state.pressureLastActiveUnitId = pressureInput.dataset.pressureUnitId;
-            state.pressureDraftValue = pressureInput.value;
-            selectTextInputValue(pressureInput);
             return;
         }
 
@@ -273,17 +296,22 @@ function attachEventListeners() {
     });
 
     elements.categoryCustomContent.addEventListener('input', event => {
+        const factorInput = event.target.closest('.factor-input[data-factor-unit-id]');
+        if (factorInput) {
+            const category = getActiveCategory(state);
+            if (category.adapter !== 'factor') {
+                return;
+            }
+
+            factorInput.value = handleFactorInput(state, category, factorInput.dataset.factorUnitId, factorInput.value);
+            refreshFactorInputs(category, factorInput.dataset.factorUnitId);
+            return;
+        }
+
         const temperatureInput = event.target.closest('.temperature-input[data-temperature-unit-id]');
         if (temperatureInput && temperatureCategory) {
             temperatureInput.value = handleTemperatureInput(state, temperatureCategory, temperatureInput.dataset.temperatureUnitId, temperatureInput.value);
             refreshTemperatureInputs(temperatureInput.dataset.temperatureUnitId);
-            return;
-        }
-
-        const pressureInput = event.target.closest('.pressure-input[data-pressure-unit-id]');
-        if (pressureInput && pressureCategory) {
-            pressureInput.value = handlePressureInput(state, pressureCategory, pressureInput.dataset.pressureUnitId, pressureInput.value);
-            refreshPressureInputs(pressureInput.dataset.pressureUnitId);
             return;
         }
 
@@ -297,17 +325,20 @@ function attachEventListeners() {
     });
 
     elements.categoryCustomContent.addEventListener('focusout', event => {
+        const factorInput = event.target.closest('.factor-input[data-factor-unit-id]');
+        if (factorInput) {
+            const category = getActiveCategory(state);
+            if (category.adapter === 'factor') {
+                finalizeFactorInput(state, category);
+                refreshFactorInputs(category);
+            }
+            return;
+        }
+
         const temperatureInput = event.target.closest('.temperature-input[data-temperature-unit-id]');
         if (temperatureInput && temperatureCategory) {
             finalizeTemperatureInput(state, temperatureCategory);
             refreshTemperatureInputs();
-            return;
-        }
-
-        const pressureInput = event.target.closest('.pressure-input[data-pressure-unit-id]');
-        if (pressureInput && pressureCategory) {
-            finalizePressureInput(state, pressureCategory);
-            refreshPressureInputs();
             return;
         }
 
@@ -346,8 +377,9 @@ function attachEventListeners() {
             return;
         }
 
-        if (getActiveCategory(state).id === 'pressure' && pressureCategory) {
-            const result = togglePressureUnitSelection(state, pressureCategory, checkbox.dataset.currencyCode, checkbox.checked);
+        const activeCategory = getActiveCategory(state);
+        if (activeCategory.adapter === 'factor') {
+            const result = toggleFactorUnitSelection(state, activeCategory, checkbox.dataset.currencyCode, checkbox.checked);
             if (result.error) {
                 showToast(result.error);
                 renderCurrencySettingsModal();
@@ -355,7 +387,7 @@ function attachEventListeners() {
             }
 
             if (result.changed) {
-                persistPressureState();
+                persistFactorPreviewState(activeCategory);
             }
             return;
         }
@@ -428,13 +460,14 @@ function attachEventListeners() {
         }
 
         event.preventDefault();
-        if (getActiveCategory(state).id === 'temperature') {
+        const activeCategory = getActiveCategory(state);
+        if (activeCategory.id === 'temperature') {
             if (moveTemperatureUnitByDrop(state, state.dragCurrencyCode, option.dataset.currencyCode, state.dragTargetPosition || 'before')) {
                 persistTemperatureState();
             }
-        } else if (getActiveCategory(state).id === 'pressure') {
-            if (movePressureUnitByDrop(state, state.dragCurrencyCode, option.dataset.currencyCode, state.dragTargetPosition || 'before')) {
-                persistPressureState();
+        } else if (activeCategory.adapter === 'factor') {
+            if (moveFactorUnitByDrop(state, activeCategory, state.dragCurrencyCode, option.dataset.currencyCode, state.dragTargetPosition || 'before')) {
+                persistFactorPreviewState(activeCategory);
             }
         } else if (moveCurrencyByDrop(state, state.dragCurrencyCode, option.dataset.currencyCode, state.dragTargetPosition || 'before')) {
             persistCurrencyState();
@@ -498,7 +531,15 @@ function activateCategory(nextCategoryId) {
 
     localStorage.setItem(STORAGE_KEYS.activeCategory, nextCategoryId);
     syncCategoryUrl(nextCategoryId);
-    ensureCategoryState(state, getActiveCategory(state));
+
+    const category = getActiveCategory(state);
+    ensureCategoryState(state, category);
+    if (category.adapter === 'factor') {
+        ensureFactorPreviewState(state, category);
+    } else if (category.id === 'temperature' && temperatureCategory) {
+        ensureTemperaturePreviewState(state, temperatureCategory);
+    }
+
     renderActiveCategory();
 }
 
@@ -516,14 +557,20 @@ function syncCategoryUrl(categoryId) {
     window.history.replaceState({}, '', url);
 }
 
+function usesMultiUnitPanel(category) {
+    return category.id === 'currency' || category.adapter === 'factor' || category.adapter === 'temperature';
+}
+
 function renderActiveCategory() {
     const category = getActiveCategory(state);
     ensureCategoryState(state, category);
     ensureCurrencyState(state);
-    if (category.id === 'pressure') {
-        ensurePressureState(state, category);
-    } else if (category.id === 'temperature') {
+
+    if (category.adapter === 'factor') {
+        ensureFactorPreviewState(state, category);
+    } else if (category.id === 'temperature' && temperatureCategory) {
         ensureTemperatureState(state, category);
+        ensureTemperaturePreviewState(state, category);
     }
 
     renderCategoryNavigation();
@@ -536,18 +583,21 @@ function renderActiveCategory() {
     elements.panelTitle.textContent = category.name;
     elements.categoryMeta.textContent = category.meta || '';
     elements.categoryMeta.classList.toggle('is-hidden', !category.meta || category.id === 'currency');
-    elements.inputValue.value = state.values[category.id];
 
-    populateSourceUnits(category);
+    if (!usesMultiUnitPanel(category)) {
+        elements.inputValue.value = state.values[category.id];
+        populateSourceUnits(category);
+    }
+
     renderResults();
 }
 
 function applyCategorySurface(category) {
-    const usesInlinePreview = category.id === 'currency' || category.id === 'pressure' || category.id === 'temperature';
+    const hideGenericInput = usesMultiUnitPanel(category);
     elements.appShell.dataset.activeCategory = category.id;
-    elements.genericInputControls.classList.toggle('is-hidden', usesInlinePreview);
-    elements.resultsCount.classList.toggle('is-hidden', usesInlinePreview);
-    elements.categoryCustomContent.innerHTML = category.id === 'currency' ? renderCurrencyPreviewPanel(state) : '';
+    elements.genericInputControls.classList.toggle('is-hidden', hideGenericInput);
+    elements.resultsCount.classList.toggle('is-hidden', hideGenericInput);
+    elements.categoryCustomContent.innerHTML = '';
 }
 
 function populateSourceUnits(category) {
@@ -589,70 +639,16 @@ function renderResults() {
         return;
     }
 
-    if (category.id === 'pressure') {
+    if (category.adapter === 'factor') {
         elements.resultsCount.textContent = '';
-        elements.categoryCustomContent.innerHTML = renderPressurePreviewPanel(state, category);
+        elements.categoryCustomContent.innerHTML = renderFactorPreviewPanel(state, category);
         return;
     }
 
     if (category.id === 'temperature') {
         elements.resultsCount.textContent = '';
         elements.categoryCustomContent.innerHTML = renderTemperaturePreviewPanel(state, category);
-        return;
     }
-
-    const rawValue = elements.inputValue.value.trim();
-    if (!rawValue) {
-        elements.resultsCount.textContent = '0';
-        elements.categoryCustomContent.innerHTML = renderInfoState('Введите число, чтобы получить пересчет по активным единицам.');
-        return;
-    }
-
-    const parsedValue = parseInputValue(rawValue);
-    if (Number.isNaN(parsedValue)) {
-        elements.resultsCount.textContent = 'error';
-        elements.categoryCustomContent.innerHTML = renderInfoState('Не удалось распознать число. Используйте только цифры, знак минус, точку или запятую.');
-        return;
-    }
-
-    const sourceUnitId = elements.inputUnit.value;
-    state.values[category.id] = elements.inputValue.value;
-    state.sourceUnits[category.id] = sourceUnitId;
-
-    const conversionResults = convertCategoryValue(category, parsedValue, sourceUnitId);
-    elements.resultsCount.textContent = String(conversionResults.length);
-
-    elements.categoryCustomContent.innerHTML = conversionResults.map(result => `
-        <article class="result-card rounded-[1.35rem] p-4 sm:p-5">
-            <div class="flex items-start justify-between gap-4">
-                <div class="min-w-0 flex-1">
-                    <p class="text-xs font-bold uppercase tracking-[0.24em]" style="color: var(--text-soft);">${result.unit.shortLabel}</p>
-                    <h3 class="mt-2 text-lg font-bold sm:text-xl">${result.unit.label}</h3>
-                    <p class="mt-3 break-all text-2xl font-extrabold sm:text-3xl">${result.formattedValue}</p>
-                </div>
-
-                <button
-                    type="button"
-                    class="copy-button rounded-2xl p-3"
-                    title="Скопировать значение"
-                    aria-label="Скопировать ${result.unit.label}"
-                    data-copy-value="${result.rawValue}"
-                    data-copy-label="Скопировано: ${result.unit.shortLabel}"
-                    style="background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(184, 93, 24, 0.2);"
-                >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                </button>
-            </div>
-        </article>
-    `).join('');
-}
-
-function renderInfoState(message) {
-    return `
-        <article class="result-card rounded-[1.35rem] p-5 sm:p-6">
-            <p class="text-sm leading-6" style="color: var(--text-soft);">${message}</p>
-        </article>
-    `;
 }
 
 function updateCurrencyLayoutState(category = getActiveCategory(state)) {
@@ -669,7 +665,7 @@ function updateResultsHeaderState(category = getActiveCategory(state)) {
             ? 'Калькулятор'
             : `${category.name}: мгновенный пересчет`;
 
-    elements.resultsCount.classList.toggle('is-hidden', isCurrencyCategory || state.isCurrencyCalculatorOpen);
+    elements.resultsCount.classList.toggle('is-hidden', usesMultiUnitPanel(category) || state.isCurrencyCalculatorOpen);
     elements.calculatorToggleButton.classList.toggle('is-hidden', !isCurrencyCategory);
     elements.calculatorToggleLabel.textContent = state.isCurrencyCalculatorOpen ? 'Скрыть калькулятор' : 'Калькулятор';
     elements.calculatorToggleButton.setAttribute('aria-pressed', String(state.isCurrencyCalculatorOpen));
@@ -694,8 +690,8 @@ function renderCurrencySettingsModal() {
 }
 
 function openCurrencySettings() {
-    const categoryId = getActiveCategory(state).id;
-    if (categoryId !== 'currency' && categoryId !== 'pressure' && categoryId !== 'temperature') {
+    const category = getActiveCategory(state);
+    if (category.id !== 'currency' && category.adapter !== 'factor' && category.id !== 'temperature') {
         return;
     }
 
@@ -721,16 +717,16 @@ function persistCurrencyState() {
     renderCurrencySettingsModal();
 }
 
-function persistPressureState() {
-    if (!pressureCategory) {
+function persistFactorPreviewState(category = getActiveCategory(state)) {
+    if (category.adapter !== 'factor') {
         return;
     }
 
-    ensurePressureState(state, pressureCategory);
-    localStorage.setItem(STORAGE_KEYS.pressureUnitsOrder, JSON.stringify(state.pressureUnitsOrder));
+    ensureFactorPreviewState(state, category);
+    persistFactorUnitsOrder(state, category);
+    localStorage.setItem(STORAGE_KEYS.categoryUnitsOrders, JSON.stringify(state.categoryUnitsOrders));
 
-    if (getActiveCategory(state).id === 'pressure') {
-        applyCategorySurface(getActiveCategory(state));
+    if (getActiveCategory(state).id === category.id) {
         renderResults();
     }
 
@@ -743,10 +739,10 @@ function persistTemperatureState() {
     }
 
     ensureTemperatureState(state, temperatureCategory);
+    ensureTemperaturePreviewState(state, temperatureCategory);
     localStorage.setItem(STORAGE_KEYS.temperatureUnitsOrder, JSON.stringify(state.temperatureUnitsOrder));
 
     if (getActiveCategory(state).id === 'temperature') {
-        applyCategorySurface(getActiveCategory(state));
         renderResults();
     }
 
@@ -761,10 +757,10 @@ function getSettingsModalConfig(category = getActiveCategory(state)) {
         };
     }
 
-    if (category.id === 'pressure') {
+    if (category.adapter === 'factor') {
         return {
-            title: 'Единицы давления',
-            body: renderPressureSettingsOptions(state, category)
+            title: `Единицы: ${category.name}`,
+            body: renderFactorSettingsOptions(state, category)
         };
     }
 
@@ -828,35 +824,23 @@ function refreshCurrencyInputs(activeCode = null) {
     });
 }
 
-function updateCurrencyClearButtonVisibility(code, value) {
-    const clearButton = elements.categoryCustomContent.querySelector(`.currency-row-clear[data-currency-code="${code}"]`);
-    if (!clearButton) {
-        return;
-    }
-
-    const hasValue = Boolean(value);
-    clearButton.classList.toggle('is-visible', hasValue);
-    clearButton.disabled = !hasValue;
-    clearButton.setAttribute('aria-hidden', String(!hasValue));
-}
-
-function refreshPressureInputs(activeUnitId = null) {
-    const inputs = elements.categoryCustomContent.querySelectorAll('.pressure-input[data-pressure-unit-id]');
+function refreshFactorInputs(category, activeUnitId = null) {
+    const inputs = elements.categoryCustomContent.querySelectorAll('.factor-input[data-factor-unit-id]');
 
     inputs.forEach(input => {
-        const unitId = input.dataset.pressureUnitId;
+        const unitId = input.dataset.factorUnitId;
         if (activeUnitId && unitId === activeUnitId) {
-            updatePressureClearButtonVisibility(unitId, input.value);
+            updateFactorClearButtonVisibility(unitId, input.value);
             return;
         }
 
-        input.value = getPressureInputDisplayValue(state, pressureCategory, unitId);
-        updatePressureClearButtonVisibility(unitId, input.value);
+        input.value = getFactorInputDisplayValue(state, category, unitId);
+        updateFactorClearButtonVisibility(unitId, input.value);
     });
 }
 
-function updatePressureClearButtonVisibility(unitId, value) {
-    const clearButton = elements.categoryCustomContent.querySelector(`.currency-row-clear[data-pressure-unit-id="${unitId}"]`);
+function updateFactorClearButtonVisibility(unitId, value) {
+    const clearButton = elements.categoryCustomContent.querySelector(`.currency-row-clear[data-factor-unit-id="${unitId}"]`);
     if (!clearButton) {
         return;
     }
@@ -884,6 +868,38 @@ function refreshTemperatureInputs(activeUnitId = null) {
 
 function updateTemperatureClearButtonVisibility(unitId, value) {
     const clearButton = elements.categoryCustomContent.querySelector(`.currency-row-clear[data-temperature-unit-id="${unitId}"]`);
+    if (!clearButton) {
+        return;
+    }
+
+    const hasValue = Boolean(value);
+    clearButton.classList.toggle('is-visible', hasValue);
+    clearButton.disabled = !hasValue;
+    clearButton.setAttribute('aria-hidden', String(!hasValue));
+}
+
+function focusFactorInput(unitId) {
+    const input = elements.categoryCustomContent.querySelector(`.factor-input[data-factor-unit-id="${unitId}"]`);
+    if (!input) {
+        return;
+    }
+
+    input.focus({ preventScroll: true });
+    selectTextInputValue(input);
+}
+
+function focusTemperatureInput(unitId) {
+    const input = elements.categoryCustomContent.querySelector(`.temperature-input[data-temperature-unit-id="${unitId}"]`);
+    if (!input) {
+        return;
+    }
+
+    input.focus({ preventScroll: true });
+    selectTextInputValue(input);
+}
+
+function updateCurrencyClearButtonVisibility(code, value) {
+    const clearButton = elements.categoryCustomContent.querySelector(`.currency-row-clear[data-currency-code="${code}"]`);
     if (!clearButton) {
         return;
     }
@@ -942,26 +958,6 @@ function focusCurrencyCalculatorInput() {
 
 function focusCurrencyInput(code) {
     const input = elements.categoryCustomContent.querySelector(`.currency-input[data-currency-code="${code}"]`);
-    if (!input) {
-        return;
-    }
-
-    input.focus({ preventScroll: true });
-    selectTextInputValue(input);
-}
-
-function focusPressureInput(unitId) {
-    const input = elements.categoryCustomContent.querySelector(`.pressure-input[data-pressure-unit-id="${unitId}"]`);
-    if (!input) {
-        return;
-    }
-
-    input.focus({ preventScroll: true });
-    selectTextInputValue(input);
-}
-
-function focusTemperatureInput(unitId) {
-    const input = elements.categoryCustomContent.querySelector(`.temperature-input[data-temperature-unit-id="${unitId}"]`);
     if (!input) {
         return;
     }

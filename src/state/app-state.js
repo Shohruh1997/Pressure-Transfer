@@ -6,12 +6,15 @@ import {
     STORAGE_KEYS,
     currencyItemsByCode
 } from '../config/app-config.js';
-import { parseCurrencyNumber } from '../utils/formatters.js';
+import { getDefaultUnitsOrder } from '../features/factor-preview.js';
+import { getDefaultTemperatureUnitsOrder } from '../features/temperature.js';
 
 export function createInitialState() {
     return {
         activeCategoryId: getInitialCategoryId(),
         activeCurrencies: getInitialCurrencySelection(),
+        categoryPreviews: {},
+        categoryUnitsOrders: loadCategoryUnitsOrders(),
         currencyBaseUsdAmount: 1,
         currencyDraftValue: null,
         currencyCalculatorExpression: '',
@@ -28,10 +31,6 @@ export function createInitialState() {
         dragTargetPosition: null,
         isCurrencyCalculatorOpen: false,
         isCurrencySettingsOpen: false,
-        pressureBasePaAmount: null,
-        pressureDraftValue: null,
-        pressureLastActiveUnitId: 'pa',
-        pressureUnitsOrder: getInitialPressureUnitsOrder(),
         temperatureBaseCelsiusAmount: null,
         temperatureDraftValue: null,
         temperatureLastActiveUnitId: 'c',
@@ -69,89 +68,43 @@ export function ensureCurrencyState(state) {
     }
 }
 
-export function ensurePressureState(state, category) {
-    state.pressureUnitsOrder = getNormalizedPressureUnitsOrder(state.pressureUnitsOrder, category);
-
-    const sourceUnit = category.units.find(unit => unit.id === state.sourceUnits[category.id])
-        || category.units.find(unit => unit.id === category.defaultSourceUnit)
-        || category.units[0]
-        || null;
-
-    if (!category.units.some(unit => unit.id === state.pressureLastActiveUnitId)) {
-        state.pressureLastActiveUnitId = sourceUnit?.id || category.defaultSourceUnit;
-        state.pressureDraftValue = null;
-    }
-
-    if (typeof state.pressureBasePaAmount !== 'number' && state.pressureBasePaAmount !== null) {
-        state.pressureBasePaAmount = getInitialPressureBaseAmount(state, category, sourceUnit);
-    }
-
-    if (state.pressureBasePaAmount === null && state.values[category.id]) {
-        const initialBaseAmount = getInitialPressureBaseAmount(state, category, sourceUnit);
-        if (initialBaseAmount !== null) {
-            state.pressureBasePaAmount = initialBaseAmount;
-        }
-    }
-}
-
 export function ensureTemperatureState(state, category) {
     state.temperatureUnitsOrder = getNormalizedTemperatureUnitsOrder(state.temperatureUnitsOrder, category);
-
-    const sourceUnit = category.units.find(unit => unit.id === state.sourceUnits[category.id])
-        || category.units.find(unit => unit.id === category.defaultSourceUnit)
-        || category.units[0]
-        || null;
-
-    if (!category.units.some(unit => unit.id === state.temperatureLastActiveUnitId)) {
-        state.temperatureLastActiveUnitId = sourceUnit?.id || category.defaultSourceUnit;
-        state.temperatureDraftValue = null;
-    }
-
-    if (typeof state.temperatureBaseCelsiusAmount !== 'number' && state.temperatureBaseCelsiusAmount !== null) {
-        state.temperatureBaseCelsiusAmount = getInitialTemperatureBaseAmount(state, category, sourceUnit);
-    }
-
-    if (state.temperatureBaseCelsiusAmount === null && state.values[category.id]) {
-        const initialBaseAmount = getInitialTemperatureBaseAmount(state, category, sourceUnit);
-        if (initialBaseAmount !== null) {
-            state.temperatureBaseCelsiusAmount = initialBaseAmount;
-        }
-    }
 }
 
-function getInitialPressureBaseAmount(state, category, sourceUnit) {
-    if (!sourceUnit) {
-        return null;
-    }
-
-    const parsedValue = parseCurrencyNumber(state.values[category.id] || '');
-    if (Number.isNaN(parsedValue)) {
-        return null;
-    }
-
-    return parsedValue * sourceUnit.factor;
-}
-
-function getInitialPressureUnitsOrder() {
-    const pressureCategory = categoriesById.get('pressure');
-    const fallbackOrder = getDefaultPressureUnitsOrder(pressureCategory);
-    const storedValue = localStorage.getItem(STORAGE_KEYS.pressureUnitsOrder);
-
-    if (!storedValue) {
-        return fallbackOrder;
-    }
+function loadCategoryUnitsOrders() {
+    const orders = {};
 
     try {
-        const parsedValue = JSON.parse(storedValue);
-        if (!Array.isArray(parsedValue)) {
-            return fallbackOrder;
+        const storedValue = localStorage.getItem(STORAGE_KEYS.categoryUnitsOrders);
+        if (storedValue) {
+            const parsedValue = JSON.parse(storedValue);
+            if (parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue)) {
+                Object.assign(orders, parsedValue);
+            }
         }
-
-        return getNormalizedPressureUnitsOrder(parsedValue, pressureCategory);
     } catch (error) {
-        console.error('Ошибка чтения порядка единиц давления:', error);
-        return fallbackOrder;
+        console.error('Ошибка чтения порядка единиц категорий:', error);
     }
+
+    const legacyPressure = localStorage.getItem(STORAGE_KEYS.pressureUnitsOrder);
+    if (legacyPressure && !orders.pressure) {
+        try {
+            orders.pressure = JSON.parse(legacyPressure);
+        } catch (error) {
+            console.error('Ошибка чтения legacy-порядка давления:', error);
+        }
+    }
+
+    categoryRegistry
+        .filter(category => category.adapter === 'factor')
+        .forEach(category => {
+            if (!orders[category.id]) {
+                orders[category.id] = getDefaultUnitsOrder(category);
+            }
+        });
+
+    return orders;
 }
 
 function getInitialTemperatureUnitsOrder() {
@@ -176,21 +129,6 @@ function getInitialTemperatureUnitsOrder() {
     }
 }
 
-function getNormalizedPressureUnitsOrder(order, category) {
-    if (!category) {
-        return [];
-    }
-
-    const unitIds = category.units.map(unit => unit.id);
-    const uniqueOrder = Array.isArray(order)
-        ? order.filter((unitId, index) => unitIds.includes(unitId) && order.indexOf(unitId) === index)
-        : [];
-
-    return uniqueOrder.length > 0
-        ? uniqueOrder
-        : getDefaultPressureUnitsOrder(category);
-}
-
 function getNormalizedTemperatureUnitsOrder(order, category) {
     if (!category) {
         return [];
@@ -204,47 +142,6 @@ function getNormalizedTemperatureUnitsOrder(order, category) {
     return uniqueOrder.length > 0
         ? uniqueOrder
         : getDefaultTemperatureUnitsOrder(category);
-}
-
-function getDefaultPressureUnitsOrder(category) {
-    if (!category) {
-        return [];
-    }
-
-    return category.units.map(unit => unit.id);
-}
-
-function getDefaultTemperatureUnitsOrder(category) {
-    if (!category) {
-        return [];
-    }
-
-    return category.units.map(unit => unit.id);
-}
-
-function getInitialTemperatureBaseAmount(state, category, sourceUnit) {
-    if (!sourceUnit) {
-        return null;
-    }
-
-    const parsedValue = parseCurrencyNumber(state.values[category.id] || '');
-    if (Number.isNaN(parsedValue)) {
-        return null;
-    }
-
-    if (sourceUnit.id === 'c') {
-        return parsedValue;
-    }
-
-    if (sourceUnit.id === 'f') {
-        return (parsedValue - 32) * 5 / 9;
-    }
-
-    if (sourceUnit.id === 'k') {
-        return parsedValue - 273.15;
-    }
-
-    return null;
 }
 
 function getInitialCategoryId() {

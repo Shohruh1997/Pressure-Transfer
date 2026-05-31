@@ -5,16 +5,37 @@ import {
     parseCurrencyNumber
 } from '../utils/formatters.js';
 
+export function getDefaultTemperatureUnitsOrder(category) {
+    return category.units.map(unit => unit.id);
+}
+
+export function ensureTemperaturePreviewState(state, category) {
+    state.temperatureUnitsOrder = normalizeTemperatureUnitsOrder(state.temperatureUnitsOrder, category);
+
+    if (!category.units.some(unit => unit.id === state.temperatureLastActiveUnitId)) {
+        state.temperatureLastActiveUnitId = category.defaultSourceUnit;
+        state.temperatureDraftValue = null;
+    }
+
+    if (typeof state.temperatureBaseCelsiusAmount !== 'number' && state.temperatureBaseCelsiusAmount !== null) {
+        state.temperatureBaseCelsiusAmount = getInitialTemperatureBaseAmount(state, category);
+    }
+
+    if (state.temperatureBaseCelsiusAmount === null) {
+        const initialBaseAmount = getInitialTemperatureBaseAmount(state, category);
+        if (initialBaseAmount !== null) {
+            state.temperatureBaseCelsiusAmount = initialBaseAmount;
+        }
+    }
+}
+
 export function renderTemperaturePreviewPanel(state, category) {
     const activeUnits = getActiveTemperatureUnits(state, category);
-    const activeUnitsLabel = `${activeUnits.length} ед.`;
 
     return `
         <section class="currency-preview temperature-preview">
             <div class="currency-preview-header">
                 <div class="currency-preview-controls">
-                    <span class="currency-chip">${activeUnitsLabel}</span>
-                    <span class="currency-chip is-muted">°C</span>
                     <button type="button" class="currency-help" data-action="open-temperature-settings" aria-label="Выбор единиц температуры">⚙</button>
                 </div>
             </div>
@@ -109,8 +130,8 @@ export function toggleTemperatureUnitSelection(state, category, unitId, isEnable
 
     if (state.temperatureLastActiveUnitId === unitId) {
         state.temperatureLastActiveUnitId = state.temperatureUnitsOrder[0];
-        state.sourceUnits[category.id] = state.temperatureLastActiveUnitId;
         state.temperatureDraftValue = null;
+        state.sourceUnits[category.id] = state.temperatureLastActiveUnitId;
     }
 
     return { changed: true };
@@ -140,6 +161,19 @@ export function moveTemperatureUnitByDrop(state, dragUnitId, targetUnitId, posit
     return true;
 }
 
+function getInitialTemperatureBaseAmount(state, category) {
+    const rawValue = state.values[category.id] || category.defaultValue || '';
+    const parsedValue = parseCurrencyNumber(rawValue);
+
+    if (Number.isNaN(parsedValue)) {
+        return null;
+    }
+
+    const sourceUnitId = state.sourceUnits[category.id] || state.temperatureLastActiveUnitId || category.defaultSourceUnit;
+    state.temperatureLastActiveUnitId = sourceUnitId;
+    return toCelsius(parsedValue, sourceUnitId);
+}
+
 function getTemperatureAmount(state, category, unitId) {
     if (state.temperatureBaseCelsiusAmount === null) {
         return null;
@@ -162,6 +196,15 @@ function getTemperatureSettingsItems(state, category) {
     const activeUnits = getActiveTemperatureUnits(state, category);
     const inactiveUnits = category.units.filter(unit => !state.temperatureUnitsOrder.includes(unit.id));
     return [...activeUnits, ...inactiveUnits];
+}
+
+function normalizeTemperatureUnitsOrder(order, category) {
+    const unitIds = category.units.map(unit => unit.id);
+    const uniqueOrder = Array.isArray(order)
+        ? order.filter((unitId, index) => unitIds.includes(unitId) && order.indexOf(unitId) === index)
+        : [];
+
+    return uniqueOrder.length > 0 ? uniqueOrder : getDefaultTemperatureUnitsOrder(category);
 }
 
 function renderTemperaturePreviewRow(state, category, unit) {

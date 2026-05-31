@@ -1,12 +1,12 @@
 import { formatNumber } from '../utils/formatters.js';
 
-export function convertCategoryValue(category, value, sourceUnitId) {
+export function convertCategoryValue(category, value, sourceUnitId, activeUnitIds = null) {
     const sourceUnit = category.units.find(unit => unit.id === sourceUnitId);
     if (!sourceUnit) {
         return [];
     }
 
-    const targetUnits = getTargetUnits(category, sourceUnitId);
+    const targetUnits = getTargetUnits(category, sourceUnitId, activeUnitIds);
 
     return targetUnits.map(unit => {
         const rawValue = convertValueByAdapter(category.adapter, value, sourceUnit, unit);
@@ -18,10 +18,12 @@ export function convertCategoryValue(category, value, sourceUnitId) {
     });
 }
 
-function getTargetUnits(category, sourceUnitId) {
-    const preferredOrder = category.defaultActiveUnits.length > 0
-        ? category.defaultActiveUnits
-        : category.units.map(unit => unit.id);
+function getTargetUnits(category, sourceUnitId, activeUnitIds) {
+    const preferredOrder = Array.isArray(activeUnitIds) && activeUnitIds.length > 0
+        ? activeUnitIds
+        : category.defaultActiveUnits.length > 0
+            ? category.defaultActiveUnits
+            : category.units.map(unit => unit.id);
 
     return preferredOrder
         .filter(unitId => unitId !== sourceUnitId)

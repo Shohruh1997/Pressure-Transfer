@@ -2,6 +2,7 @@ export const STORAGE_KEYS = {
     theme: 'universal-converter-theme',
     activeCategory: 'universal-converter-active-category',
     activeCurrencies: 'universal-converter-active-currencies',
+    categoryUnitsOrders: 'universal-converter-category-units-orders',
     pressureUnitsOrder: 'universal-converter-pressure-units-order',
     temperatureUnitsOrder: 'universal-converter-temperature-units-order'
 };
