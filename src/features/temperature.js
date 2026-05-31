@@ -170,12 +170,10 @@ function renderTemperaturePreviewRow(state, category, unit) {
 
     return `
         <article class="currency-preview-row temperature-preview-row">
-            <div class="currency-row-label">
+            <div class="currency-row-label" title="${unit.label}">
                 <span class="currency-flag" aria-hidden="true">${getTemperatureUnitBadge(unit)}</span>
-                <div>
-                    <div class="currency-row-code">${unit.shortLabel}</div>
-                    <div class="currency-row-name">${unit.label}</div>
-                </div>
+                <span class="currency-row-code">${unit.shortLabel}</span>
+                <span class="currency-row-name">${unit.label}</span>
             </div>
             <input
                 type="text"
@@ -188,16 +186,18 @@ function renderTemperaturePreviewRow(state, category, unit) {
                 placeholder="0"
                 aria-label="Температура в ${unit.label}"
             >
-            <button
-                type="button"
-                class="currency-row-clear ${hasDisplayValue ? 'is-visible' : ''}"
-                data-action="clear-temperature-input"
-                data-temperature-unit-id="${unit.id}"
-                aria-label="Очистить температуру в ${unit.label}"
-                title="Очистить"
-                ${hasDisplayValue ? '' : 'disabled aria-hidden="true"'}
-            >&times;</button>
-            <button type="button" class="currency-row-action" data-action="move-temperature-unit-top" data-temperature-unit-id="${unit.id}" aria-label="Поднять ${unit.shortLabel} наверх">↑</button>
+            <div class="currency-row-actions">
+                <button
+                    type="button"
+                    class="currency-row-clear ${hasDisplayValue ? 'is-visible' : ''}"
+                    data-action="clear-temperature-input"
+                    data-temperature-unit-id="${unit.id}"
+                    aria-label="Очистить температуру в ${unit.label}"
+                    title="Очистить"
+                    ${hasDisplayValue ? '' : 'disabled aria-hidden="true"'}
+                >&times;</button>
+                <button type="button" class="currency-row-action" data-action="move-temperature-unit-top" data-temperature-unit-id="${unit.id}" aria-label="Поднять ${unit.shortLabel} наверх" title="Поднять наверх">↑</button>
+            </div>
         </article>
     `;
 }

@@ -295,12 +295,10 @@ function renderCurrencyPreviewRow(state, item) {
 
     return `
         <article class="currency-preview-row">
-            <div class="currency-row-label">
+            <div class="currency-row-label" title="${item.name}">
                 <span class="currency-flag" aria-hidden="true">${item.badge}</span>
-                <div>
-                    <div class="currency-row-code">${item.code}</div>
-                    <div class="currency-row-name">${item.name}</div>
-                </div>
+                <span class="currency-row-code">${item.code}</span>
+                <span class="currency-row-name">${item.name}</span>
             </div>
             <input
                 type="text"
@@ -311,18 +309,20 @@ function renderCurrencyPreviewRow(state, item) {
                 data-currency-code="${item.code}"
                 value="${displayValue}"
                 placeholder="0"
-                aria-label="Сумма в ${item.code}"
+                aria-label="Сумма в ${item.code}, ${item.name}"
             >
-            <button
-                type="button"
-                class="currency-row-clear ${hasDisplayValue ? 'is-visible' : ''}"
-                data-action="clear-currency-input"
-                data-currency-code="${item.code}"
-                aria-label="Очистить сумму ${item.code}"
-                title="Очистить"
-                ${hasDisplayValue ? '' : 'disabled aria-hidden="true"'}
-            >&times;</button>
-            <button type="button" class="currency-row-action" data-action="move-currency-top" data-currency-code="${item.code}" aria-label="Поднять ${item.code} наверх">↑</button>
+            <div class="currency-row-actions">
+                <button
+                    type="button"
+                    class="currency-row-clear ${hasDisplayValue ? 'is-visible' : ''}"
+                    data-action="clear-currency-input"
+                    data-currency-code="${item.code}"
+                    aria-label="Очистить сумму ${item.code}"
+                    title="Очистить"
+                    ${hasDisplayValue ? '' : 'disabled aria-hidden="true"'}
+                >&times;</button>
+                <button type="button" class="currency-row-action" data-action="move-currency-top" data-currency-code="${item.code}" aria-label="Поднять ${item.code} наверх" title="Поднять наверх">↑</button>
+            </div>
         </article>
     `;
 }

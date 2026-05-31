@@ -22,7 +22,6 @@ export const elements = {
     closeCurrencySettings: document.getElementById('closeCurrencySettings'),
     themeToggle: document.getElementById('themeToggle'),
     themeToggleIcon: document.getElementById('themeToggleIcon'),
-    themeToggleLabel: document.getElementById('themeToggleLabel'),
     toast: document.getElementById('toast'),
     toastLabel: document.getElementById('toastLabel')
 };

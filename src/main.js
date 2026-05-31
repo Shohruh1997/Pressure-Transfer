@@ -458,7 +458,9 @@ function attachEventListeners() {
         }
     });
 
-    elements.themeToggle.addEventListener('click', toggleTheme);
+    if (elements.themeToggle) {
+        elements.themeToggle.addEventListener('click', toggleTheme);
+    }
 }
 
 function renderCategoryNavigation() {
@@ -803,8 +805,12 @@ function toggleTheme() {
 }
 
 function updateThemeToggle(theme) {
+    if (!elements.themeToggle || !elements.themeToggleIcon) {
+        return;
+    }
+
     elements.themeToggleIcon.textContent = theme === 'dark' ? '☀' : '◐';
-    elements.themeToggleLabel.textContent = theme === 'dark' ? 'Светлая тема' : 'Темная тема';
+    elements.themeToggle.setAttribute('aria-label', theme === 'dark' ? 'Светлая тема' : 'Темная тема');
 }
 
 function refreshCurrencyInputs(activeCode = null) {

@@ -176,12 +176,10 @@ function renderPressurePreviewRow(state, category, unit) {
 
     return `
         <article class="currency-preview-row pressure-preview-row">
-            <div class="currency-row-label">
+            <div class="currency-row-label" title="${unit.label}">
                 <span class="currency-flag" aria-hidden="true">${getPressureUnitBadge(unit.id)}</span>
-                <div>
-                    <div class="currency-row-code">${unit.shortLabel}</div>
-                    <div class="currency-row-name">${unit.label}</div>
-                </div>
+                <span class="currency-row-code">${unit.shortLabel}</span>
+                <span class="currency-row-name">${unit.label}</span>
             </div>
             <input
                 type="text"
@@ -194,16 +192,18 @@ function renderPressurePreviewRow(state, category, unit) {
                 placeholder="0"
                 aria-label="Давление в ${unit.label}"
             >
-            <button
-                type="button"
-                class="currency-row-clear ${hasDisplayValue ? 'is-visible' : ''}"
-                data-action="clear-pressure-input"
-                data-pressure-unit-id="${unit.id}"
-                aria-label="Очистить давление в ${unit.label}"
-                title="Очистить"
-                ${hasDisplayValue ? '' : 'disabled aria-hidden="true"'}
-            >&times;</button>
-            <button type="button" class="currency-row-action" data-action="move-pressure-unit-top" data-pressure-unit-id="${unit.id}" aria-label="Поднять ${unit.shortLabel} наверх">↑</button>
+            <div class="currency-row-actions">
+                <button
+                    type="button"
+                    class="currency-row-clear ${hasDisplayValue ? 'is-visible' : ''}"
+                    data-action="clear-pressure-input"
+                    data-pressure-unit-id="${unit.id}"
+                    aria-label="Очистить давление в ${unit.label}"
+                    title="Очистить"
+                    ${hasDisplayValue ? '' : 'disabled aria-hidden="true"'}
+                >&times;</button>
+                <button type="button" class="currency-row-action" data-action="move-pressure-unit-top" data-pressure-unit-id="${unit.id}" aria-label="Поднять ${unit.shortLabel} наверх" title="Поднять наверх">↑</button>
+            </div>
         </article>
     `;
 }
