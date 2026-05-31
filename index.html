@@ -386,6 +386,28 @@
             transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
         }
 
+        @media (max-width: 767px) {
+            .currency-preview-row,
+            .pressure-preview-row,
+            .temperature-preview-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+            }
+
+            .currency-row-label {
+                grid-column: 1 / -1;
+            }
+
+            .currency-row-input {
+                min-width: 0;
+                width: 100%;
+            }
+
+            .currency-row-action {
+                display: none;
+            }
+        }
+
         .currency-preview-row:hover {
             border-color: rgba(59, 130, 246, 0.3);
             box-shadow: 0 12px 24px rgba(59, 130, 246, 0.1);
@@ -1046,7 +1068,6 @@
             }
 
             .currency-preview-row {
-                grid-template-columns: minmax(0, 1fr) auto auto;
                 padding: 0.85rem 0.9rem;
             }
 
@@ -1100,18 +1121,8 @@
             }
 
             .currency-preview-row {
-                grid-template-columns: minmax(0, 1fr) auto auto;
                 padding: 0.8rem 0.85rem;
                 gap: 0.75rem;
-            }
-
-            .pressure-preview-row,
-            .temperature-preview-row {
-                grid-template-columns: minmax(0, 1fr) auto auto;
-            }
-
-            .currency-row-action {
-                display: none;
             }
 
             .currency-preview-header {
@@ -1179,7 +1190,7 @@
             }
 
             .surface-card {
-                margin: 1rem;
+                margin: 0.75rem;
                 padding: 0.8rem;
                 border-radius: 1.3rem;
             }
@@ -1211,19 +1222,9 @@
             }
 
             .currency-preview-row {
-                grid-template-columns: minmax(0, 1fr) auto auto;
                 padding: 0.75rem 0.8rem;
                 gap: 0.6rem;
                 border-radius: 0.9rem;
-            }
-
-            .pressure-preview-row,
-            .temperature-preview-row {
-                grid-template-columns: minmax(0, 1fr) auto auto;
-            }
-
-            .currency-row-action {
-                display: none;
             }
 
             .currency-preview-header {
@@ -1395,9 +1396,9 @@
 <body>
     <!-- Навигация -->
     <nav style="background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40;" class="mb-4">
-        <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-10 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6 lg:px-10">
             <a href="/" style="color: var(--accent); font-weight: 700;">Flex Convert</a>
-            <div class="flex gap-4 text-sm">
+            <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 <a href="/partners.html" style="color: var(--accent); text-decoration: none;">Партнёрство</a>
                 <a href="/guides/currency-conversion.html" style="color: var(--accent); text-decoration: none;">Гайды</a>
             </div>
@@ -1412,8 +1413,8 @@
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0">
                                 <div class="flex items-center gap-3">
-                                    <img src="/logo.svg" alt="Flex Convert" class="h-12 w-auto shrink-0 sm:h-14">
-                                    <div class="min-w-0">
+                                    <img src="/logo.svg" alt="Flex Convert" class="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-auto">
+                                    <div class="min-w-0 flex-1">
                                         <p class="text-xs font-extrabold uppercase tracking-[0.34em]" style="color: var(--accent);">Flex Convert</p>
                                         <h1 class="mt-2 text-2xl font-extrabold leading-tight sm:text-3xl">Онлайн-конвертер единиц и валют</h1>
                                     </div>
